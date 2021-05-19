@@ -1,6 +1,6 @@
 # PyGo
 
-PyGo is a Cargo like too for Python
+PyGo is a Cargo like manager for Python
 
 
 `pygo new myproject`
