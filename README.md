@@ -33,7 +33,7 @@ myproject
 ```
 
 The `__main__.py` file will have a template like
-```py
+```python
 def main():
   print("Hello World")
 
