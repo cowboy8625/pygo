@@ -1,7 +1,5 @@
 <p align="center">
-  <br>
-  PyGo
-  <br>
+  <br> <h1>PyGo</h1> <br>
   <a href="https://crates.io/crates/pygo"><img alt="crates.io" src="https://img.shields.io/crates/v/pygo.svg"></a>
   <a><img alt="lastupdated" src="https://img.shields.io/github/last-commit/cowboy8625/pygo"></a>
   <a><img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/cowboy8625/pygo"></a>
@@ -33,7 +31,7 @@ myproject
 ```
 
 The `__main__.py` file will have a template like
-```
+```py
 def main():
   print("Hello World")
 
