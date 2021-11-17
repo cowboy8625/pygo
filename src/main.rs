@@ -1,6 +1,13 @@
-use clap::{crate_description, crate_name, crate_version, App, Arg, SubCommand};
+mod arguments;
+mod command;
+mod error;
+use command::PygoCommand;
+use error::PygoResult;
 use std::fs::{create_dir, File};
 use std::io::prelude::*;
+
+use serde::Deserialize;
+
 const AUTHOR: &str = "
 ▞▀▖       ▌        ▞▀▖▞▀▖▞▀▖▛▀▘
 ▌  ▞▀▖▌  ▌▛▀▖▞▀▖▌ ▌▚▄▘▙▄  ▗▘▙▄
@@ -8,97 +15,145 @@ const AUTHOR: &str = "
 ▝▀ ▝▀  ▘▘ ▀▀ ▝▀ ▗▄▘▝▀ ▝▀ ▀▀▘▝▀
 Email: cowboy8625@protonmail.com
 ";
-fn main() {
-    let ptype = cargs();
-    if let Some(project_type) = ptype {
-        project_type.create();
-    }
-}
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum ProjectType {
-    Bin(String),
-    Lib(String),
-}
-
-impl ProjectType {
-    fn create(&self) {
-        match self {
-            Self::Bin(name) => create_bin_project(name),
-            Self::Lib(name) => create_lib_project(name),
+fn main() -> PygoResult<()> {
+    let _config: Option<Config> = std::fs::read_to_string("Pygo.toml")
+        .ok()
+        .and_then(|f| toml::from_str(&f).ok());
+    let command = arguments::cargs()?;
+    match command {
+        PygoCommand::Run => run_command(),
+        PygoCommand::New { name, ptype } => {
+            if ptype {
+                return new_lib_project(&name);
+            }
+            return new_bin_project(&name);
         }
+        PygoCommand::Init { name, ptype } => {
+            if ptype {
+                return init_lib_project(&name);
+            }
+            return init_bin_project(&name);
+        } // PygoCommand::Add(names) => {}
     }
 }
 
-fn create_basic_dir(name: &str) {
-    create_dir(name).expect("Could not create Poject Folder.");
-    create_dir(format!("{}/src", name)).expect("Could not create src Folder.");
-    std::process::Command::new("git")
-        .args(&["init", name])
-        .spawn()
-        .expect("Creating a git repository Failed.");
+#[derive(Debug, Deserialize)]
+struct Config {
+    package: Package,
+}
+
+#[derive(Debug, Deserialize)]
+struct Package {
+    name: String,
+}
+
+fn run_command() -> PygoResult<()> {
+    let output = std::process::Command::new("python").arg("src").output()?;
+    Ok(std::io::stdout().write_all(&output.stdout)?)
+}
+
+fn create_readme(name: &str) -> PygoResult<()> {
     let mut file =
         File::create(format!("{}/README.md", name)).expect("Could not create __main__.py");
     let boilerplate = format!("# {}", name);
-    file.write_all(boilerplate.as_bytes())
-        .expect("Failed to write to __main__.py");
+    file.write_all(boilerplate.as_bytes())?;
+    Ok(())
 }
 
-fn create_bin_project(name: &str) {
-    create_basic_dir(name);
-    let mut file =
-        File::create(format!("{}/src/__main__.py", name)).expect("Could not create __main__.py");
-    let boilerplate =
-        "def main():\n    print(\"Hello World\")\n\nif __name__ == \"__main__\":\n    main()"
-            .to_string();
-    file.write_all(boilerplate.as_bytes())
-        .expect("Failed to write to __main__.py");
+fn init_git(name: &str) -> PygoResult<()> {
+    std::process::Command::new("git")
+        .args(&["init", name])
+        .output()?;
+    dot_git_ignore(name)?;
+    Ok(())
 }
 
-fn create_lib_project(name: &str) {
-    create_basic_dir(name);
-    let _ =
-        File::create(format!("{}/src/__init__.py", name)).expect("Could not create __main__.py");
+fn dot_git_ignore(name: &str) -> PygoResult<()> {
+    let mut file = File::create(format!("{}/.gitignore", name))?;
+    let boilerplate = format!("# {}", name);
+    file.write_all(boilerplate.as_bytes())?;
+    Ok(())
 }
 
-fn cargs() -> Option<ProjectType> {
-    let matches = App::new(crate_name!())
-        .version(crate_version!())
-        .author(AUTHOR)
-        .about(crate_description!())
-        .subcommand(
-            SubCommand::with_name("new")
-                .about("Used for configuration")
-                .arg(
-                    Arg::with_name("project_name")
-                        .help("Set name of project")
-                        .takes_value(true)
-                        .index(1),
-                )
-                .arg(
-                    Arg::with_name("binary")
-                        .long("bin")
-                        .help("Makes a file structure with a __main__.py in src folder.")
-                        .takes_value(false),
-                )
-                .arg(
-                    Arg::with_name("library")
-                        .long("lib")
-                        .help("Makes a library file structure with a __init__.py in src folder.")
-                        .takes_value(false),
-                ),
+fn create_main_project_dir(name: &str) {
+    create_dir(name).expect("Could not create Poject Folder.");
+}
+
+fn create_src_dir(name: &str) -> PygoResult<()> {
+    create_dir(format!("{}/src", name))?;
+    Ok(())
+}
+
+fn create_basic_setup(name: &str) -> PygoResult<()> {
+    create_main_project_dir(name);
+    create_src_dir(name)?;
+    create_readme(name);
+    create_toml_file(name)?;
+    Ok(())
+}
+
+fn create_src_file_with(project: &str, filename: &str, template: &str) -> PygoResult<()> {
+    let mut file = File::create(format!("{}/src/{}", project, filename))
+        .expect(&format!("Failed to create file {}.", filename));
+    file.write_all(template.as_bytes())?;
+    Ok(())
+}
+
+fn create_toml_file(name: &str) -> PygoResult<()> {
+    let mut file = File::create(&format!("{}/Pygo.toml", name))
+        .expect(&format!("Failed to create file {}.", name));
+    file.write_all(
+        &format!(
+            "[project]\nname = \"{}\"
+version = \"3.10.0\"
+[dependencies]\n",
+            name
         )
-        .get_matches();
+        .as_bytes(),
+    )?;
+    Ok(())
+}
 
-    if let Some(matches) = matches.subcommand_matches("new") {
-        let project_name = matches
-            .value_of("project_name")
-            .unwrap_or("default")
-            .to_string();
-        if matches.is_present("library") {
-            return Some(ProjectType::Lib(project_name));
-        }
-        return Some(ProjectType::Bin(project_name));
-    }
-    None
+fn create_environment() -> PygoResult<()> {
+    create_dir(&"env")?;
+    Ok(())
+}
+
+fn new_bin_project(pro_dir: &str) -> PygoResult<()> {
+    create_basic_setup(pro_dir)?;
+    init_git(pro_dir)?;
+    create_src_file_with(
+        pro_dir,
+        "__main__.py",
+        "def main():\n    print(\"Hello World\")\n\nif __name__ == \"__main__\":\n    main()",
+    )?;
+    create_environment()?;
+    Ok(())
+}
+
+fn new_lib_project(pro_dir: &str) -> PygoResult<()> {
+    create_basic_setup(pro_dir)?;
+    init_git(pro_dir)?;
+    create_src_file_with(pro_dir, "__init__.py", "")?;
+    create_environment()?;
+    Ok(())
+}
+
+fn init_bin_project(pro_dir: &str) -> PygoResult<()> {
+    create_basic_setup(pro_dir)?;
+    create_src_file_with(
+        pro_dir,
+        "__main__.py",
+        "def main():\n    print(\"Hello World\")\n\nif __name__ == \"__main__\":\n    main()",
+    )?;
+    create_environment()?;
+    Ok(())
+}
+
+fn init_lib_project(pro_dir: &str) -> PygoResult<()> {
+    create_basic_setup(pro_dir)?;
+    create_src_file_with(pro_dir, "__init__.py", "")?;
+    create_environment()?;
+    Ok(())
 }

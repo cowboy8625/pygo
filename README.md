@@ -62,10 +62,12 @@ myproject
 
 # RoadMap
 
-  - More Commands Options
-    1. `init` creates a project that has no `git` repo.
-    2. `env` creates a virtual environment for your project.
-    3. `add` command to install library's to your vm.
-  - installable through `pip` or from package manager
+- [X] **new** creates new project with a git repo command with `--lib` or `--bin` option where `--bin` is default.
+- [X] **init** creates a new project with out a git repo command with `--lib` or `--bin` option where `--bin` is default.
+- [X] **run** runs python project
+- [ ] **clean** clears all unused files from environment and packages.
+- [ ] **build** zips project and places it into a **release** directory.
+- [ ] **test** runs custom test for project.
+- [ ] Create custom environment for python project.
 
 

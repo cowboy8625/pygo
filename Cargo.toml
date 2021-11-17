@@ -1,8 +1,8 @@
 [package]
 name = "pygo"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["cowboy8625 <cowboy8625@yahoo.com>"]
-edition = "2018"
+edition = "2021"
 description = "Cargo like program for Python"
 readme = "README.md"
 repository = "https://github.com/cowboy8625/pygo"
@@ -11,6 +11,8 @@ keywords = ["python", "project", "manager"]
 categories = ["command-line-utilities"]
 
 [dependencies]
+serde = { version = "1.0.130", features = ["derive"] }
+toml = "0.5.8"
 
 [dependencies.clap]
 version = "~2.33.3"
