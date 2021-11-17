@@ -88,7 +88,7 @@ fn create_src_dir(name: &str) -> PygoResult<()> {
 fn create_basic_setup(name: &str) -> PygoResult<()> {
     create_main_project_dir(name);
     create_src_dir(name)?;
-    create_readme(name);
+    create_readme(name)?;
     create_toml_file(name)?;
     Ok(())
 }
