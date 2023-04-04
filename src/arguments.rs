@@ -1,8 +1,9 @@
 use crate::command::PygoCommand;
-use crate::error::{ErrorKind, PygoError, PygoResult};
 use crate::AUTHOR;
+use anyhow::{anyhow, Result};
+
 use clap::{crate_description, crate_name, crate_version, App, Arg, SubCommand};
-pub fn cargs() -> PygoResult<PygoCommand> {
+pub fn cargs() -> Result<PygoCommand> {
     let matches = App::new(crate_name!())
         .version(crate_version!())
         .author(AUTHOR)
@@ -67,10 +68,7 @@ pub fn cargs() -> PygoResult<PygoCommand> {
     if let Some(matches) = matches.subcommand_matches("add") {
         let _lib_name = matches.value_of("lib-name").unwrap_or("").to_string();
         // TODO: make this work.
-        return Err(PygoError {
-            kind: ErrorKind::NoArgument,
-            message: "Command Not yet ready.".into(),
-        });
+        return Err(anyhow!("Command Not yet ready."));
     }
     if let Some(matches) = matches.subcommand_matches("new") {
         let name = matches
@@ -91,8 +89,5 @@ pub fn cargs() -> PygoResult<PygoCommand> {
     if let Some(_) = matches.subcommand_matches("run") {
         return Ok(PygoCommand::Run);
     }
-    Err(PygoError {
-        kind: ErrorKind::NoArgument,
-        message: "No args given to pygo to run.".into(),
-    })
+    Err(anyhow!("No args given to pygo to run."))
 }

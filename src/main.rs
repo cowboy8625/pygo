@@ -1,8 +1,9 @@
 mod arguments;
 mod command;
-mod error;
+mod defaults;
+use anyhow::Result;
 use command::PygoCommand;
-use error::PygoResult;
+use defaults::DEFAULT_GITIGNORE;
 use std::fs::{create_dir, File};
 use std::io::prelude::*;
 
@@ -16,7 +17,7 @@ const AUTHOR: &str = "
 Email: cowboy8625@protonmail.com
 ";
 
-fn main() -> PygoResult<()> {
+fn main() -> Result<()> {
     let _config: Option<Config> = std::fs::read_to_string("Pygo.toml")
         .ok()
         .and_then(|f| toml::from_str(&f).ok());
@@ -38,22 +39,24 @@ fn main() -> PygoResult<()> {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Config {
     package: Package,
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Package {
     name: String,
 }
 
-fn run_command() -> PygoResult<()> {
+fn run_command() -> Result<()> {
     let output = std::process::Command::new("python").arg("src").output()?;
     Ok(std::io::stdout().write_all(&output.stdout)?)
 }
 
-fn create_readme(name: &str) -> PygoResult<()> {
+fn create_readme(name: &str) -> Result<()> {
     let mut file =
         File::create(format!("{}/README.md", name)).expect("Could not create __main__.py");
     let boilerplate = format!("# {}", name);
@@ -61,7 +64,7 @@ fn create_readme(name: &str) -> PygoResult<()> {
     Ok(())
 }
 
-fn init_git(name: &str) -> PygoResult<()> {
+fn init_git(name: &str) -> Result<()> {
     std::process::Command::new("git")
         .args(&["init", name])
         .output()?;
@@ -69,10 +72,8 @@ fn init_git(name: &str) -> PygoResult<()> {
     Ok(())
 }
 
-fn dot_git_ignore(name: &str) -> PygoResult<()> {
-    let mut file = File::create(format!("{}/.gitignore", name))?;
-    let boilerplate = format!("# {}", name);
-    file.write_all(boilerplate.as_bytes())?;
+fn dot_git_ignore(name: &str) -> Result<()> {
+    std::fs::write(format!("{name}/.gitignore"), DEFAULT_GITIGNORE)?;
     Ok(())
 }
 
@@ -80,12 +81,12 @@ fn create_main_project_dir(name: &str) {
     create_dir(name).expect("Could not create Poject Folder.");
 }
 
-fn create_src_dir(name: &str) -> PygoResult<()> {
+fn create_src_dir(name: &str) -> Result<()> {
     create_dir(format!("{}/src", name))?;
     Ok(())
 }
 
-fn create_basic_setup(name: &str) -> PygoResult<()> {
+fn create_basic_setup(name: &str) -> Result<()> {
     create_main_project_dir(name);
     create_src_dir(name)?;
     create_readme(name)?;
@@ -93,14 +94,14 @@ fn create_basic_setup(name: &str) -> PygoResult<()> {
     Ok(())
 }
 
-fn create_src_file_with(project: &str, filename: &str, template: &str) -> PygoResult<()> {
+fn create_src_file_with(project: &str, filename: &str, template: &str) -> Result<()> {
     let mut file = File::create(format!("{}/src/{}", project, filename))
         .expect(&format!("Failed to create file {}.", filename));
     file.write_all(template.as_bytes())?;
     Ok(())
 }
 
-fn create_toml_file(name: &str) -> PygoResult<()> {
+fn create_toml_file(name: &str) -> Result<()> {
     let mut file = File::create(&format!("{}/Pygo.toml", name))
         .expect(&format!("Failed to create file {}.", name));
     file.write_all(
@@ -115,12 +116,12 @@ version = \"3.10.0\"
     Ok(())
 }
 
-fn create_environment() -> PygoResult<()> {
-    create_dir(&"env")?;
+fn create_environment() -> Result<()> {
+    // create_dir(&"env")?;
     Ok(())
 }
 
-fn new_bin_project(pro_dir: &str) -> PygoResult<()> {
+fn new_bin_project(pro_dir: &str) -> Result<()> {
     create_basic_setup(pro_dir)?;
     init_git(pro_dir)?;
     create_src_file_with(
@@ -132,7 +133,7 @@ fn new_bin_project(pro_dir: &str) -> PygoResult<()> {
     Ok(())
 }
 
-fn new_lib_project(pro_dir: &str) -> PygoResult<()> {
+fn new_lib_project(pro_dir: &str) -> Result<()> {
     create_basic_setup(pro_dir)?;
     init_git(pro_dir)?;
     create_src_file_with(pro_dir, "__init__.py", "")?;
@@ -140,7 +141,7 @@ fn new_lib_project(pro_dir: &str) -> PygoResult<()> {
     Ok(())
 }
 
-fn init_bin_project(pro_dir: &str) -> PygoResult<()> {
+fn init_bin_project(pro_dir: &str) -> Result<()> {
     create_basic_setup(pro_dir)?;
     create_src_file_with(
         pro_dir,
@@ -151,7 +152,7 @@ fn init_bin_project(pro_dir: &str) -> PygoResult<()> {
     Ok(())
 }
 
-fn init_lib_project(pro_dir: &str) -> PygoResult<()> {
+fn init_lib_project(pro_dir: &str) -> Result<()> {
     create_basic_setup(pro_dir)?;
     create_src_file_with(pro_dir, "__init__.py", "")?;
     create_environment()?;

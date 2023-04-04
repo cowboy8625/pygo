@@ -13,6 +13,7 @@ categories = ["command-line-utilities"]
 [dependencies]
 serde = { version = "1.0.130", features = ["derive"] }
 toml = "0.5.8"
+anyhow = "1.0.70"
 
 [dependencies.clap]
 version = "~2.33.3"
