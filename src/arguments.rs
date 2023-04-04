@@ -86,7 +86,7 @@ pub fn cargs() -> Result<PygoCommand> {
         let ptype = matches.is_present("library");
         return Ok(PygoCommand::Init { name, ptype });
     }
-    if let Some(_) = matches.subcommand_matches("run") {
+    if matches.subcommand_matches("run").is_some() {
         return Ok(PygoCommand::Run);
     }
     Err(anyhow!("No args given to pygo to run."))

@@ -28,13 +28,13 @@ fn main() -> Result<()> {
             if ptype {
                 return new_lib_project(&name);
             }
-            return new_bin_project(&name);
+            new_bin_project(&name)
         }
         PygoCommand::Init { name, ptype } => {
             if ptype {
                 return init_lib_project(&name);
             }
-            return init_bin_project(&name);
+            init_bin_project(&name)
         } // PygoCommand::Add(names) => {}
     }
 }
@@ -66,7 +66,7 @@ fn create_readme(name: &str) -> Result<()> {
 
 fn init_git(name: &str) -> Result<()> {
     std::process::Command::new("git")
-        .args(&["init", name])
+        .args(["init", name])
         .output()?;
     dot_git_ignore(name)?;
     Ok(())
@@ -96,16 +96,16 @@ fn create_basic_setup(name: &str) -> Result<()> {
 
 fn create_src_file_with(project: &str, filename: &str, template: &str) -> Result<()> {
     let mut file = File::create(format!("{}/src/{}", project, filename))
-        .expect(&format!("Failed to create file {}.", filename));
+        .unwrap_or_else(|_| panic!("Failed to create file {}.", filename));
     file.write_all(template.as_bytes())?;
     Ok(())
 }
 
 fn create_toml_file(name: &str) -> Result<()> {
-    let mut file = File::create(&format!("{}/Pygo.toml", name))
-        .expect(&format!("Failed to create file {}.", name));
+    let mut file = File::create(format!("{}/Pygo.toml", name))
+        .unwrap_or_else(|_| panic!("Failed to create file {}.", name));
     file.write_all(
-        &format!(
+        format!(
             "[project]\nname = \"{}\"
 version = \"3.10.0\"
 [dependencies]\n",
